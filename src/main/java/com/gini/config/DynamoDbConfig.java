@@ -15,9 +15,21 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import com.gini.entity.v2.Employee;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,4 +63,43 @@ public class DynamoDbConfig {
                 .build();
 
     }
+
+    @Bean
+    public DynamoDbEnhancedClient dynamoDbEnhancedClient(){
+//        DynamoDbEnhancedClient enhancedClient = DynamoDbEnhancedClient.builder()
+//                .dynamoDbClient(
+//                        // Configure an instance of the standard client.
+//                        DynamoDbClient.builder()
+//                                .region(Region.US_EAST_1)
+//                                .credentialsProvider(ProfileCredentialsProvider.create())
+//                                .build())
+//                .build();
+
+
+
+ //       return enhancedClient;
+
+        return DynamoDbEnhancedClient.builder().dynamoDbClient(getDynamoDbClient()).build();
+    }
+
+    private DynamoDbClient getDynamoDbClient() {
+        ClientOverrideConfiguration.Builder overrideConfig =
+                ClientOverrideConfiguration.builder();
+
+        return DynamoDbClient.builder()
+                //.overrideConfiguration(overrideConfig.build())
+                .endpointOverride(URI.create("http://localhost:8000"))
+                .region(Region.US_EAST_2)
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("xxx", "yyy")))
+                .build();
+    }
+
+
+    @Bean
+    public DynamoDbTable<Employee> employeeTable  (DynamoDbEnhancedClient dynamoDbEnhancedClient){
+       return dynamoDbEnhancedClient.table("employee", TableSchema.fromBean(Employee.class));
+    }
+
+
+
 }
